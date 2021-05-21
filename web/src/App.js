@@ -65,6 +65,8 @@ function randomizeAlternatives(array) {
 export default function App() {
   const [questionList, setQuestionList] = useState([]);
   const [onSelectAlternative, setOnSelectAlternative] = useState("");
+  const [hits, setHits] = useState(0);
+  const [indexQuestion, setIndexQuestion] = useState(0);
   const { root, header, title, questionBox, infoBar, button } = useStyles();
 
   useEffect(() => {
@@ -116,14 +118,24 @@ export default function App() {
       </header>
       <Container className={root}>
         <Grid container className={questionBox}>
-          {questionList[0] ? (
+          {questionList[indexQuestion] ? (
             <QuestionElement
-              index={questionList[0].index}
-              question={questionList[0].question}
-              alternatives={questionList[0].alternatives}
+              index={questionList[indexQuestion].index}
+              question={questionList[indexQuestion].question}
+              alternatives={questionList[indexQuestion].alternatives}
               setOnSelectAlternative={setOnSelectAlternative}
             />
           ) : null}
+
+          {indexQuestion === questionList.length ? (
+            <h1>You hit {hits} questions!</h1>
+          ) : (
+            console.log({
+              hits,
+              questionList,
+              onSelectAlternative,
+            })
+          )}
 
           {onSelectAlternative === "" ? (
             <span style={{ cursor: "not-allowed" }}>
@@ -137,7 +149,21 @@ export default function App() {
               </Button>
             </span>
           ) : (
-            <Button variant="outlined" size="large" className={button}>
+            <Button
+              variant="outlined"
+              size="large"
+              className={button}
+              onClick={() => {
+                if (
+                  onSelectAlternative ===
+                  questionList[indexQuestion].correctAnswer
+                ) {
+                  setHits(hits + 1);
+                }
+                setIndexQuestion(indexQuestion + 1);
+                setOnSelectAlternative("");
+              }}
+            >
               next
             </Button>
           )}
