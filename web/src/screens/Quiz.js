@@ -1,27 +1,26 @@
 import React from "react";
 import { useEffect, useState } from "react";
 import QuestionElement from "../Components/QuestionElement";
-import ShuffleIcon from "@material-ui/icons/Shuffle";
-import { useParams } from "react-router-dom";
+import { Shuffle } from "@material-ui/icons";
+
+import { useParams, useHistory } from "react-router-dom";
 
 import flex from "../styles/flex";
 import Header from "../Components/Header";
-import QuestionResultElement from "../Components/QuestionResultElement";
+import ModalConfirm from "../Components/ModalConfirm";
 
 // Convert all HTML entities and prevent XSS attack from HTML in api
 import { decode } from "html-entities";
 import { sanitize } from "dompurify";
 
 import {
+  CircularProgress,
   makeStyles,
   Container,
-  CircularProgress,
-  Backdrop,
   Toolbar,
   Button,
   AppBar,
   Grid,
-  Card,
 } from "@material-ui/core";
 
 import api from "../services/api";
@@ -46,6 +45,12 @@ const useStyles = makeStyles(() => ({
     zIndex: 1000,
     marginTop: "10vh",
   },
+  cancelButton: {
+    display: "flex",
+    justifyContent: "left",
+    flexDirection: "row",
+    marginBottom: 10,
+  },
   title: {
     fontFamily: "'Lobster', cursive",
     fontSize: 30,
@@ -58,146 +63,184 @@ const useStyles = makeStyles(() => ({
   button: {
     width: 500,
   },
-  cardResult: {
-    ...flex,
-    width: 500,
-    padding: 10,
-    marginBottom: 30,
-    background: "#00a152",
-    color: "white",
-  },
 }));
 
 export default function Quiz() {
   const params = useParams();
+  const history = useHistory();
 
+  // State from choice after click in alternatives
   const [onSelectAlternative, setOnSelectAlternative] = useState("");
-  const [indexQuestion, setIndexQuestion] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [quizList, setQuizList] = useState([]);
-  const [hits, setHits] = useState(0);
 
-  const { root, infoBar, questionBox, button, cardResult, title } = useStyles();
+  // Array of actual Quiz not finished yet by user
+  const [quizList, setQuizList] = useState([]);
+
+  // Index for the list inside quizList
+  const [indexQuestion, setIndexQuestion] = useState(0);
+
+  // Booleans to control the app
+  const [loading, setLoading] = useState(false);
+  const [cancel, setCancel] = useState(false);
+
+  const { root, infoBar, questionBox, button, title, cancelButton } =
+    useStyles();
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      let numberOfQuestions = params.numberOfQuestions;
-      if (numberOfQuestions < 1) {
-        numberOfQuestions = 1;
-      }
-      if (numberOfQuestions > 100) {
-        numberOfQuestions = 100;
-      }
-      await api.get(`api.php?amount=${numberOfQuestions}`).then((response) => {
-        setQuizList(
-          response.data.results.map((e, index) => {
-            const question = decode(sanitize(e.question));
-            const correctAnswer = decode(sanitize(e.correct_answer));
-            const alternatives = randomizeAlternatives([
-              ...e.incorrect_answers.map((incorrectAnswer) =>
-                decode(sanitize(incorrectAnswer))
-              ),
-              correctAnswer,
-            ]);
+      try {
+        let numberOfQuestions = params.numberOfQuestions;
 
-            return {
-              index,
-              question,
-              correctAnswer,
-              alternatives,
-              selectedAlternative: "",
-            };
-          })
-        );
-        setLoading(false);
-      });
+        // Prevent to get invalid numbers from URL
+        if (numberOfQuestions < 1) {
+          numberOfQuestions = 1;
+        } else if (numberOfQuestions > 100) {
+          numberOfQuestions = 100;
+        }
+
+        await api
+          .get(`api.php?amount=${numberOfQuestions}`)
+          .then((response) => {
+            setQuizList(
+              response.data.results.map((e, index) => {
+                const question = decode(sanitize(e.question));
+                const correctAnswer = decode(sanitize(e.correct_answer));
+                const alternatives = randomizeAlternatives([
+                  ...e.incorrect_answers.map((incorrectAnswer) =>
+                    decode(sanitize(incorrectAnswer))
+                  ),
+                  correctAnswer,
+                ]);
+
+                return {
+                  index,
+                  question,
+                  correctAnswer,
+                  alternatives,
+                  selectedAlternative: "",
+                };
+              })
+            );
+            setLoading(false);
+          });
+      } catch (error) {
+        console.error(error);
+        console.log("Não foi possível realizar a requisição");
+      }
     }
     fetchData();
-  }, []);
+  }, [params.numberOfQuestions]);
 
   useEffect(() => {
-    if (indexQuestion < quizList.length) {
+    if (
+      loading === false &&
+      quizList.length !== 0 &&
+      indexQuestion < quizList.length
+    ) {
       quizList[indexQuestion].selectedAlternative = onSelectAlternative;
     }
-  }, [onSelectAlternative]);
+  }, [quizList, onSelectAlternative, indexQuestion, loading]);
+
+  useEffect(() => {
+    async function finishQuiz() {
+      if (
+        loading === false &&
+        quizList.length !== 0 &&
+        indexQuestion === quizList.length
+      ) {
+        try {
+          let temp = await JSON.parse(localStorage.getItem("global_quizlist"));
+
+          if (!temp) temp = [];
+
+          temp.push(quizList);
+
+          await localStorage.setItem("global_quizlist", JSON.stringify(temp));
+
+          history.push(`/result/${temp.length - 1}`);
+        } catch (error) {
+          console.error(error);
+          console.log("Não foi possível resgatar e salvar o Quiz atual");
+        }
+      }
+    }
+    finishQuiz();
+  }, [indexQuestion, quizList, history, loading]);
+
+  async function submit() {
+    setIndexQuestion(indexQuestion + 1);
+    setOnSelectAlternative("");
+  }
 
   return (
     <Container className={root}>
       <Header />
-      <AppBar color="secondary" className={infoBar}>
-        <Grid
-          container
-          direction="row"
-          justify="space-evenly"
-          alignItems="center"
-        >
-          <ShuffleIcon fontSize="large" />
-          <Toolbar className={title}>Random</Toolbar>
-          <span className={title}>59''</span>
+      {cancel ? <ModalConfirm setCancel={setCancel} /> : null}
+      {loading ? (
+        <Grid className={questionBox}>
+          <CircularProgress />
         </Grid>
-      </AppBar>
+      ) : (
+        <>
+          <AppBar color="secondary" className={infoBar}>
+            <Grid
+              container
+              direction="row"
+              justify="space-evenly"
+              alignItems="center"
+            >
+              <Shuffle fontSize="large" />
+              <Toolbar className={title}>Random</Toolbar>
+              <span className={title}>59''</span>
+            </Grid>
+          </AppBar>
 
-      <Grid container className={questionBox}>
-        {quizList[indexQuestion] ? (
-          <QuestionElement
-            index={quizList[indexQuestion].index}
-            question={quizList[indexQuestion].question}
-            alternatives={quizList[indexQuestion].alternatives}
-            setOnSelectAlternative={setOnSelectAlternative}
-          />
-        ) : null}
+          <Grid container className={questionBox}>
+            <Grid className={cancelButton}>
+              <Button className={button} onClick={() => setCancel(true)}>
+                Cancel
+              </Button>
+            </Grid>
+            {quizList[indexQuestion] ? (
+              <QuestionElement
+                index={quizList[indexQuestion].index}
+                question={quizList[indexQuestion].question}
+                alternatives={quizList[indexQuestion].alternatives}
+                setOnSelectAlternative={setOnSelectAlternative}
+              />
+            ) : null}
 
-        {quizList && !loading ? (
-          indexQuestion === quizList.length ? (
-            <>
-              <Card className={cardResult}>
-                <h1>You hit {hits} questions!</h1>
-              </Card>
-              {quizList.map((e) => (
-                <QuestionResultElement
-                  hits={hits}
-                  question={e.question}
-                  alternatives={e.alternatives}
-                  correctAnswer={e.correctAnswer}
-                  selectedAlternative={e.selectedAlternative}
-                />
-              ))}
-            </>
-          ) : (
-            console.log({
-              hits,
+            {onSelectAlternative === "" ? (
+              <span style={{ cursor: "not-allowed" }}>
+                <Button
+                  disabled
+                  variant="outlined"
+                  size="large"
+                  className={button}
+                >
+                  next
+                </Button>
+              </span>
+            ) : (
+              <Button
+                variant="outlined"
+                size="large"
+                className={button}
+                onClick={() => submit()}
+              >
+                next
+              </Button>
+            )}
+
+            {/* {console.log({
               quizList,
               selectedAlternative: onSelectAlternative,
-            })
-          )
-        ) : null}
-
-        {onSelectAlternative === "" ? (
-          <span style={{ cursor: "not-allowed" }}>
-            <Button disabled variant="outlined" size="large" className={button}>
-              next
-            </Button>
-          </span>
-        ) : (
-          <Button
-            variant="outlined"
-            size="large"
-            className={button}
-            onClick={() => {
-              if (
-                onSelectAlternative === quizList[indexQuestion].correctAnswer
-              ) {
-                setHits(hits + 1);
-              }
-              setIndexQuestion(indexQuestion + 1);
-              setOnSelectAlternative("");
-            }}
-          >
-            next
-          </Button>
-        )}
-      </Grid>
+              indexQuestion,
+              quizListLength: quizList.length,
+            })} */}
+          </Grid>
+        </>
+      )}
     </Container>
   );
 }

@@ -18,13 +18,20 @@ const useStyles = makeStyles(() => ({
   },
   form: {
     ...flex,
+  },
+  input: {
     width: 500,
+    marginTop: 10,
+  },
+  button: {
+    width: 500,
+    marginTop: 20,
   },
 }));
 
 export default function Home() {
-  // const [numberOfQuestions, setNumberOfQuestions] = useState(0);
-  const { root, main, form } = useStyles();
+  // const [historicQuizList, setHistoricQuizList] = useState(0);
+  const { root, main, form, input, button } = useStyles();
   const history = useHistory();
 
   async function handleSubmit(e) {
@@ -40,6 +47,7 @@ export default function Home() {
           <h2>Choose the number of questions:</h2>
 
           <Input
+            required
             type={"number"}
             onChange={(event) =>
               event.target.value < 1
@@ -48,9 +56,12 @@ export default function Home() {
                 ? (event.target.value = 100)
                 : event.target.value
             }
+            className={input}
           ></Input>
 
-          <Button type={"submit"}>Start</Button>
+          <Button variant="outlined" type={"submit"} className={button}>
+            Start
+          </Button>
         </form>
       </main>
     </div>
