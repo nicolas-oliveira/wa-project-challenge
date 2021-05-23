@@ -11,7 +11,7 @@ import {
 
 const useStyle = makeStyles(() => ({
   formBody: {
-    width: 500,
+    width: "100%",
   },
   card: {
     padding: 40,

@@ -18,13 +18,16 @@ const useStyles = makeStyles(() => ({
   },
   form: {
     ...flex,
+    maxWidth: 500,
+    width: "100%",
+    padding: 20,
   },
   input: {
-    width: 500,
+    width: "100%",
     marginTop: 10,
   },
   button: {
-    width: 500,
+    width: "100%",
     marginTop: 20,
   },
 }));
@@ -52,8 +55,8 @@ export default function Home() {
             onChange={(event) =>
               event.target.value < 1
                 ? (event.target.value = 1)
-                : event.target.value > 100
-                ? (event.target.value = 100)
+                : event.target.value > 50
+                ? (event.target.value = 50)
                 : event.target.value
             }
             className={input}

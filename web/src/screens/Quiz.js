@@ -46,22 +46,25 @@ const useStyles = makeStyles(() => ({
     marginTop: "10vh",
   },
   cancelButton: {
-    display: "flex",
-    justifyContent: "left",
-    flexDirection: "row",
+    // display: "flex",
+    // justifyContent: "left",
+    // flexDirection: "row",
     marginBottom: 10,
   },
   title: {
     fontFamily: "'Lobster', cursive",
     fontSize: 30,
-    alignSelf: "center",
+    // alignSelf: "center",
   },
   questionBox: {
-    ...flex,
+    justifyContent: "center",
     paddingTop: "22vh",
   },
   button: {
-    width: 500,
+    width: 200,
+  },
+  loadingContainer: {
+    height: "100vh",
   },
 }));
 
@@ -81,55 +84,64 @@ export default function Quiz() {
   // Booleans to control the app
   const [loading, setLoading] = useState(false);
   const [cancel, setCancel] = useState(false);
+  const [counter, setCounter] = useState(60);
 
-  const { root, infoBar, questionBox, button, title, cancelButton } =
-    useStyles();
+  const {
+    root,
+    infoBar,
+    loadingContainer,
+    questionBox,
+    button,
+    title,
+    cancelButton,
+  } = useStyles();
+
+  async function fetchData() {
+    console.log("effect1");
+    setLoading(true);
+    try {
+      let numberOfQuestions = params.numberOfQuestions;
+
+      // Prevent to get invalid numbers from URL
+      if (numberOfQuestions < 1) {
+        numberOfQuestions = 1;
+      } else if (numberOfQuestions > 50) {
+        numberOfQuestions = 50;
+      }
+
+      await api.get(`api.php?amount=${numberOfQuestions}`).then((response) => {
+        setQuizList(
+          response.data.results.map((e, index) => {
+            const question = decode(sanitize(e.question));
+            const correctAnswer = decode(sanitize(e.correct_answer));
+            const alternatives = randomizeAlternatives([
+              ...e.incorrect_answers.map((incorrectAnswer) =>
+                decode(sanitize(incorrectAnswer))
+              ),
+              correctAnswer,
+            ]);
+
+            return {
+              index,
+              question,
+              correctAnswer,
+              alternatives,
+              selectedAlternative: "",
+            };
+          })
+        );
+        setLoading(false);
+      });
+    } catch (error) {
+      console.error(error);
+      console.log("Não foi possível realizar a requisição");
+    }
+  }
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        let numberOfQuestions = params.numberOfQuestions;
-
-        // Prevent to get invalid numbers from URL
-        if (numberOfQuestions < 1) {
-          numberOfQuestions = 1;
-        } else if (numberOfQuestions > 100) {
-          numberOfQuestions = 100;
-        }
-
-        await api
-          .get(`api.php?amount=${numberOfQuestions}`)
-          .then((response) => {
-            setQuizList(
-              response.data.results.map((e, index) => {
-                const question = decode(sanitize(e.question));
-                const correctAnswer = decode(sanitize(e.correct_answer));
-                const alternatives = randomizeAlternatives([
-                  ...e.incorrect_answers.map((incorrectAnswer) =>
-                    decode(sanitize(incorrectAnswer))
-                  ),
-                  correctAnswer,
-                ]);
-
-                return {
-                  index,
-                  question,
-                  correctAnswer,
-                  alternatives,
-                  selectedAlternative: "",
-                };
-              })
-            );
-            setLoading(false);
-          });
-      } catch (error) {
-        console.error(error);
-        console.log("Não foi possível realizar a requisição");
-      }
-    }
     fetchData();
-  }, [params.numberOfQuestions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (
@@ -137,6 +149,7 @@ export default function Quiz() {
       quizList.length !== 0 &&
       indexQuestion < quizList.length
     ) {
+      console.log("effect2");
       quizList[indexQuestion].selectedAlternative = onSelectAlternative;
     }
   }, [quizList, onSelectAlternative, indexQuestion, loading]);
@@ -148,6 +161,7 @@ export default function Quiz() {
         quizList.length !== 0 &&
         indexQuestion === quizList.length
       ) {
+        console.log("effect3");
         try {
           let temp = await JSON.parse(localStorage.getItem("global_quizlist"));
 
@@ -167,9 +181,16 @@ export default function Quiz() {
     finishQuiz();
   }, [indexQuestion, quizList, history, loading]);
 
+  useEffect(() => {
+    const timer =
+      counter > 0 && setInterval(() => setCounter(counter - 1), 1000);
+    return () => clearInterval(timer);
+  }, [counter]);
+
   async function submit() {
     setIndexQuestion(indexQuestion + 1);
     setOnSelectAlternative("");
+    setCounter(60);
   }
 
   return (
@@ -177,7 +198,13 @@ export default function Quiz() {
       <Header />
       {cancel ? <ModalConfirm setCancel={setCancel} /> : null}
       {loading ? (
-        <Grid className={questionBox}>
+        <Grid
+          container
+          direction="row"
+          justify="center"
+          alignItems="center"
+          className={loadingContainer}
+        >
           <CircularProgress />
         </Grid>
       ) : (
@@ -191,46 +218,70 @@ export default function Quiz() {
             >
               <Shuffle fontSize="large" />
               <Toolbar className={title}>Random</Toolbar>
-              <span className={title}>59''</span>
+              <span className={title}>{counter}''</span>
             </Grid>
           </AppBar>
 
           <Grid container className={questionBox}>
-            <Grid className={cancelButton}>
-              <Button className={button} onClick={() => setCancel(true)}>
-                Cancel
-              </Button>
-            </Grid>
-            {quizList[indexQuestion] ? (
-              <QuestionElement
-                index={quizList[indexQuestion].index}
-                question={quizList[indexQuestion].question}
-                alternatives={quizList[indexQuestion].alternatives}
-                setOnSelectAlternative={setOnSelectAlternative}
-              />
-            ) : null}
+            <Grid
+              container
+              item
+              direction="column"
+              justify="column"
+              alignItems="center"
+              style={{ maxWidth: 500 }}
+            >
+              {quizList[indexQuestion] ? (
+                <QuestionElement
+                  index={quizList[indexQuestion].index}
+                  question={quizList[indexQuestion].question}
+                  alternatives={quizList[indexQuestion].alternatives}
+                  setOnSelectAlternative={setOnSelectAlternative}
+                />
+              ) : null}
 
-            {onSelectAlternative === "" ? (
-              <span style={{ cursor: "not-allowed" }}>
-                <Button
-                  disabled
-                  variant="outlined"
-                  size="large"
-                  className={button}
-                >
-                  next
-                </Button>
-              </span>
-            ) : (
-              <Button
-                variant="outlined"
-                size="large"
-                className={button}
-                onClick={() => submit()}
+              <Grid
+                container
+                item
+                direction="row"
+                justify="space-between"
+                alignItems="center"
+                className={cancelButton}
               >
-                next
-              </Button>
-            )}
+                <Button
+                  color="secondary"
+                  variant="outlined"
+                  className={button}
+                  size="large"
+                  onClick={() => setCancel(true)}
+                >
+                  Cancel
+                </Button>
+                <Grid>
+                  {onSelectAlternative === "" ? (
+                    <span style={{ cursor: "not-allowed" }}>
+                      <Button
+                        disabled
+                        variant="outlined"
+                        size="large"
+                        className={button}
+                      >
+                        next
+                      </Button>
+                    </span>
+                  ) : (
+                    <Button
+                      variant="outlined"
+                      size="large"
+                      className={button}
+                      onClick={() => submit()}
+                    >
+                      next
+                    </Button>
+                  )}
+                </Grid>
+              </Grid>
+            </Grid>
           </Grid>
         </>
       )}
