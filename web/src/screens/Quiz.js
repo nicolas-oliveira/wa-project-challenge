@@ -79,6 +79,7 @@ export default function Quiz() {
   // Booleans to control the app
   const [loading, setLoading] = useState(false);
   const [cancel, setCancel] = useState(false);
+
   const [counter, setCounter] = useState(60);
 
   const {
@@ -227,12 +228,23 @@ export default function Quiz() {
               style={{ maxWidth: 500 }}
             >
               {quizList[indexQuestion] ? (
-                <QuestionElement
-                  index={quizList[indexQuestion].index}
-                  question={quizList[indexQuestion].question}
-                  alternatives={quizList[indexQuestion].alternatives}
-                  setOnSelectAlternative={setOnSelectAlternative}
-                />
+                counter > 0 ? (
+                  <QuestionElement
+                    disabled={false}
+                    index={quizList[indexQuestion].index}
+                    question={quizList[indexQuestion].question}
+                    alternatives={quizList[indexQuestion].alternatives}
+                    setOnSelectAlternative={setOnSelectAlternative}
+                  />
+                ) : (
+                  <QuestionElement
+                    disabled={true}
+                    index={quizList[indexQuestion].index}
+                    question={quizList[indexQuestion].question}
+                    alternatives={quizList[indexQuestion].alternatives}
+                    setOnSelectAlternative={setOnSelectAlternative}
+                  />
+                )
               ) : null}
 
               <Grid
@@ -253,7 +265,7 @@ export default function Quiz() {
                   Cancel
                 </Button>
                 <Grid>
-                  {onSelectAlternative === "" ? (
+                  {onSelectAlternative === "" && counter > 0 ? (
                     <span style={{ cursor: "not-allowed" }}>
                       <Button
                         disabled

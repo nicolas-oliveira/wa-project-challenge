@@ -22,6 +22,7 @@ export default function QuestionElement({
   question,
   alternatives,
   setOnSelectAlternative,
+  disabled,
 }) {
   const { formBody, card, radioGroup } = useStyle();
 
@@ -42,16 +43,28 @@ export default function QuestionElement({
         onChange={handleChange}
         className={radioGroup}
       >
-        {alternatives.map((alternative) => {
-          return (
-            <FormControlLabel
-              key={alternative}
-              value={alternative}
-              control={<Radio />}
-              label={alternative}
-            />
-          );
-        })}
+        {disabled
+          ? alternatives.map((alternative) => {
+              return (
+                <FormControlLabel
+                  disabled
+                  key={alternative}
+                  value={alternative}
+                  control={<Radio />}
+                  label={alternative}
+                />
+              );
+            })
+          : alternatives.map((alternative) => {
+              return (
+                <FormControlLabel
+                  key={alternative}
+                  value={alternative}
+                  control={<Radio />}
+                  label={alternative}
+                />
+              );
+            })}
       </RadioGroup>
     </FormControl>
   );
