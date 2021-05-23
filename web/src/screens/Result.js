@@ -48,6 +48,12 @@ const useStyles = makeStyles(() => ({
     background: "#00a152",
     color: "white",
   },
+  loadingStyle: {
+    ...flex,
+    width: 500,
+    padding: 10,
+    marginBottom: 30,
+  },
 }));
 
 export default function Result() {
@@ -59,26 +65,25 @@ export default function Result() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    async function getResult() {
+    async function getHistoricQuizList() {
       setLoading(true);
-
       setHits(0);
-
       try {
-        const globalQuizList = await JSON.parse(
-          localStorage.getItem("global_quizlist")
+        const historicQuizList = await JSON.parse(
+          localStorage.getItem("historic_quizList")
         );
 
-        if (globalQuizList)
-          setQuizList(globalQuizList[param.indexOfGlobalQuizList]);
+        if (historicQuizList)
+          setQuizList(historicQuizList[param.indexOfHistoricQuizList]);
       } catch (error) {
         console.error(error);
         console.log("Não foi possível obter o resultado solicitado");
       }
       setLoading(false);
     }
-    getResult();
-  }, [param.indexOfGlobalQuizList]);
+    getHistoricQuizList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [param.indexOfHistoricQuizList]);
 
   useEffect(() => {
     if (!loading && quizList.length > 0) {
@@ -91,7 +96,8 @@ export default function Result() {
     }
   }, [quizList, hits, loading]);
 
-  const { root, main, cardResult, back, link, button } = useStyles();
+  const { root, main, cardResult, back, link, button, loadingStyle } =
+    useStyles();
 
   return (
     <div className={root}>
@@ -107,7 +113,7 @@ export default function Result() {
         </Grid>
 
         {loading ? (
-          <Grid className={cardResult}>
+          <Grid className={loadingStyle}>
             <CircularProgress />
           </Grid>
         ) : (

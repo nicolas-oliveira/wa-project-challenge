@@ -4,8 +4,9 @@ import { useHistory } from "react-router-dom";
 
 import flex from "../styles/flex";
 import Header from "../Components/Header";
+import TableOfHistoricQuiz from "../Components/TableOfHistoricQuiz";
 
-import { makeStyles, Button, Input } from "@material-ui/core";
+import { makeStyles, Button, Input, Grid } from "@material-ui/core";
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -30,11 +31,17 @@ const useStyles = makeStyles(() => ({
     width: "100%",
     marginTop: 20,
   },
+  tableContainer: {
+    ...flex,
+    maxWidth: 500,
+    width: "100%",
+    padding: 20,
+  },
 }));
 
 export default function Home() {
   // const [historicQuizList, setHistoricQuizList] = useState(0);
-  const { root, main, form, input, button } = useStyles();
+  const { root, main, form, input, button, tableContainer } = useStyles();
   const history = useHistory();
 
   async function handleSubmit(e) {
@@ -66,6 +73,9 @@ export default function Home() {
             Start
           </Button>
         </form>
+        <Grid className={tableContainer}>
+          <TableOfHistoricQuiz />
+        </Grid>
       </main>
     </div>
   );

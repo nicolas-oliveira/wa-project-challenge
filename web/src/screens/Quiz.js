@@ -159,13 +159,15 @@ export default function Quiz() {
       ) {
         console.log("effect3");
         try {
-          let temp = await JSON.parse(localStorage.getItem("global_quizlist"));
+          let temp = await JSON.parse(
+            localStorage.getItem("historic_quizList")
+          );
 
           if (!temp) temp = [];
 
           temp.push(quizList);
 
-          await localStorage.setItem("global_quizlist", JSON.stringify(temp));
+          await localStorage.setItem("historic_quizList", JSON.stringify(temp));
 
           history.push(`/result/${temp.length - 1}`);
         } catch (error) {

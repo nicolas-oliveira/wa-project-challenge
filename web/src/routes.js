@@ -11,7 +11,7 @@ function Routes() {
       <Switch>
         <Route path="/" exact component={Home} />
         <Route path="/quiz/:numberOfQuestions" component={Quiz} />
-        <Route path="/result/:indexOfGlobalQuizList" component={Result} />
+        <Route path="/result/:indexOfHistoricQuizList" component={Result} />
       </Switch>
     </BrowserRouter>
   );
