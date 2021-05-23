@@ -5,7 +5,6 @@ import { Shuffle } from "@material-ui/icons";
 
 import { useParams, useHistory } from "react-router-dom";
 
-import flex from "../styles/flex";
 import Header from "../Components/Header";
 import ModalConfirm from "../Components/ModalConfirm";
 
@@ -46,15 +45,11 @@ const useStyles = makeStyles(() => ({
     marginTop: "10vh",
   },
   cancelButton: {
-    // display: "flex",
-    // justifyContent: "left",
-    // flexDirection: "row",
     marginBottom: 10,
   },
   title: {
     fontFamily: "'Lobster', cursive",
     fontSize: 30,
-    // alignSelf: "center",
   },
   questionBox: {
     justifyContent: "center",
