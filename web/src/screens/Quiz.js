@@ -231,13 +231,6 @@ export default function Quiz() {
                 next
               </Button>
             )}
-
-            {/* {console.log({
-              quizList,
-              selectedAlternative: onSelectAlternative,
-              indexQuestion,
-              quizListLength: quizList.length,
-            })} */}
           </Grid>
         </>
       )}
